@@ -9,7 +9,7 @@ Redis Pub/Sub과 SSE를 기반으로 다중 인스턴스 환경에서 동작하�
 실무에서 알림 기능을 쓸 때 항상 "이게 왜 이렇게 동작하지?"라는 의문이 남았습니다. 특히 서버가 여러 대일 때 SSE 연결은 어떻게 관리되는지, 
 Redis를 단순 캐시가 아닌 메시지 브로커로 쓰면 어떤 제약이 생기는지 직접 부딪혀보고 싶었습니다.
 
-구체적으로 답하고 싶었던 질문들:
+알람 기능에서 정확히 알고 넘어가야 하는 내용:
 
 - SSE와 WebSocket의 선택 기준은 정확히 어디서 갈리는가
 - `SUBSCRIBE` 상태의 Redis 커넥션은 왜 다른 명령을 받을 수 없는가
@@ -35,7 +35,7 @@ POST /notifications
                      DB status → delivered
 ```
 
-nginx가 `ip_hash`로 SSE 연결을 스티키하게 라우팅합니다. 알림 발송 요청은 어느 서버로 가든 Redis를 통해 연결을 보유한 서버로 전달됩니다.
+nginx가 `ip_hash`로 SSE 연결을 스티키하게 라우팅합니다. 알림 발송 요청은 어느 서버로 가든 Redis를 통해 SSE 연결이 있는 서버로 전달됩니다.
 
 ---
 
@@ -43,7 +43,7 @@ nginx가 `ip_hash`로 SSE 연결을 스티키하게 라우팅합니다. 알림 �
 
 ### SSE 선택
 
-알림은 서버 → 클라이언트 단방향입니다. "읽음 처리" 같은 사용자 액션은 REST로 처리하면 충분합니다. WebSocket은 이 요구사항에서 오버엔지니어링이고, SSE는 HTTP를 그대로 사용하므로 프록시 설정이 단순하고 브라우저가 재연결을 자동으로 처리합니다.
+알림은 서버 → 클라이언트 단방향입니다. "읽음 처리" 같은 사용자 액션은 REST로 처리하면 충분합니다. WebSocket은 이 요구사항엔 과하고, SSE는 HTTP를 그대로 쓰니 프록시 설정도 단순하고 브라우저 재연결도 알아서 됩니다.
 
 ### Redis 인스턴스 분리
 
@@ -62,7 +62,7 @@ userId별 Redis 채널 구독도 ref-counting으로 관리합니다. 같은 user
 
 ### 전달 보장: At-Least-Once
 
-Redis Pub/Sub은 Fire-and-Forget입니다. 메시지를 PUBLISH할 때 구독자가 없으면 사라집니다. 완전한 Exactly-Once는 Kafka나 Redis Stream 같은 별도 솔루션이 필요한 영역입니다.
+Redis Pub/Sub은 Fire-and-Forget입니다. 메시지를 PUBLISH할 때 구독자가 없으면 사라집니다. Exactly-Once를 제대로 보장하려면 Kafka나 Redis Stream 같은 걸 써야 합니다.
 
 이 프로젝트에서는 알림을 DB에 먼저 `pending` 상태로 저장하고, SSE 전달 시 `delivered`로 업데이트합니다. 브라우저가 SSE 재연결 시 `Last-Event-ID` 헤더를 전송하면, 서버는 해당 ID 이후의 `pending` 알림을 조회해 즉시 재전송합니다.
 
@@ -136,7 +136,17 @@ curl -N "http://localhost:3000/notifications/stream?userId=user-1" \
 # id가 3보다 큰 pending 알림이 즉시 재전송되면 정상
 ```
 
-**4. 유닛 테스트**
+**4. 브라우저 대시보드 (`http://localhost:5173`)**
+
+| 순서 | 동작 | 확인 포인트 |
+|------|------|------------|
+| 1 | userId 입력 → 연결 버튼 | 상단에 `connected` 상태 표시 |
+| 2 | 제목 입력 → 발송 | "실시간 수신" 영역에 즉시 표시, 목록 `delivered` 상태 |
+| 3 | 알림 항목 읽음 버튼 클릭 | 해당 항목 `read` 상태로 전환 |
+| 4 | "전체 브로드캐스트" 체크 → 발송 | 연결된 모든 userId에 수신 |
+| 5 | 탭 두 개에서 같은 userId로 연결 후 발송 | 두 탭 모두 수신 (멀티탭 지원 검증) |
+
+**5. 유닛 테스트**
 
 ```bash
 npm test
@@ -178,8 +188,8 @@ curl -X POST http://localhost:3001/notifications \
 
 ## 한계와 다음 단계
 
-**Redis Stream 교체**: Pub/Sub은 메시지 영속성이 없습니다. Redis Stream과 Consumer Group을 쓰면 더 강한 전달 보장이 가능합니다.
+**Redis Stream 교체**: Pub/Sub은 메시지 영속성이 없습니다. Redis Stream + Consumer Group으로 바꾸면 전달 보장이 훨씬 확실해집니다.
 
-**수평 확장 시 ref-counting**: 각 서버가 Redis 채널 구독 ref-counting을 독립적으로 관리하기 때문에, 서버가 비정상 종료되면 구독이 남을 수 있습니다. Redis에 카운터를 올리는 방식으로 개선할 수 있습니다.
+**수평 확장 시 ref-counting**: 각 서버가 ref-count를 따로 관리하다 보니, 서버가 죽으면 구독이 그대로 남습니다. Redis 중앙 카운터를 두는 방식으로 해결할 수 있습니다.
 
-**인증**: 현재 userId를 쿼리 파라미터로 받습니다. 실제 서비스라면 JWT 인증이 필요합니다.
+**인증**: 지금은 userId를 쿼리 파라미터로 그냥 받습니다. 실제로 쓴다면 JWT가 필요합니다.
