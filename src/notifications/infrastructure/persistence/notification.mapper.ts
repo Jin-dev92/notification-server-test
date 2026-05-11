@@ -1,8 +1,8 @@
 import { Notification } from '../../domain/entities/notification';
-import { NotificationOrmEntity } from './notification.orm-entity';
+import { NotificationEntity } from './notification.entity';
 
 export class NotificationMapper {
-  static toDomain(orm: NotificationOrmEntity): Notification {
+  static toDomain(orm: NotificationEntity): Notification {
     const entity = new Notification();
     entity.id = orm.id;
     entity.userId = orm.userId;
@@ -16,8 +16,8 @@ export class NotificationMapper {
     return entity;
   }
 
-  static toOrm(domain: Notification): NotificationOrmEntity {
-    const orm = new NotificationOrmEntity();
+  static toOrm(domain: Notification): NotificationEntity {
+    const orm = new NotificationEntity();
     if (domain.id) orm.id = domain.id;
     orm.userId = domain.userId;
     orm.type = domain.type;

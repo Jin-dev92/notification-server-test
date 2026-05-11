@@ -8,13 +8,13 @@ import {
   NotificationRepository,
 } from '../../domain/repositories/notification.repository';
 import { NotificationMapper } from './notification.mapper';
-import { NotificationOrmEntity } from './notification.orm-entity';
+import { NotificationEntity } from './notification.entity';
 
 @Injectable()
 export class NotificationTypeOrmRepository extends NotificationRepository {
   constructor(
-    @InjectRepository(NotificationOrmEntity)
-    private readonly repo: Repository<NotificationOrmEntity>,
+    @InjectRepository(NotificationEntity)
+    private readonly repo: Repository<NotificationEntity>,
   ) {
     super();
   }

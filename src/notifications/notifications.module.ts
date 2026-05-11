@@ -8,13 +8,13 @@ import { FindAndMarkMissedUseCase } from './application/use-cases/find-and-mark-
 import { GetNotificationsUseCase } from './application/use-cases/get-notifications.use-case';
 import { MarkAsReadUseCase } from './application/use-cases/mark-as-read.use-case';
 import { NotificationRepository } from './domain/repositories/notification.repository';
-import { NotificationOrmEntity } from './infrastructure/persistence/notification.orm-entity';
+import { NotificationEntity } from './infrastructure/persistence/notification.entity';
 import { NotificationTypeOrmRepository } from './infrastructure/persistence/notification.typeorm.repository';
 import { NotificationsController } from './presentation/notifications.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([NotificationOrmEntity]),
+    TypeOrmModule.forFeature([NotificationEntity]),
     RedisModule,
     SseModule,
   ],

@@ -13,7 +13,7 @@ import {
 
 @Entity('notification')
 @Index('idx_user_status', ['userId', 'status'])
-export class NotificationOrmEntity {
+export class NotificationEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
