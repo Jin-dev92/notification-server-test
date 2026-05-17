@@ -1,5 +1,8 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { ProductRepository } from '../../domain/repositories/product.repository';
+import {
+  ProductRepository,
+  UpdateProductData,
+} from '../../domain/repositories/product.repository';
 import {
   CACHE_EVENT,
   CACHE_KEY,
@@ -52,7 +55,10 @@ export class WriteBehindFlusherService
 
     for (const id of ids) {
       try {
-        await this.repo.update(+id, JSON.parse(pending[id]));
+        await this.repo.update(
+          +id,
+          JSON.parse(pending[id]) as UpdateProductData,
+        );
         this.metrics.emit(CACHE_EVENT.dbWrite, {
           id,
           strategy: CACHE_STRATEGY.writeBehind,

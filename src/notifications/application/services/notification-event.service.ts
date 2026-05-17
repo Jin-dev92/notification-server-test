@@ -36,7 +36,9 @@ export class NotificationEventService implements OnModuleInit {
   }
 
   private handleRedisMessage(channel: string, message: string): void {
-    const { notificationId, ...ssePayload }: RedisPayload = JSON.parse(message);
+    const { notificationId, ...ssePayload } = JSON.parse(
+      message,
+    ) as RedisPayload;
 
     if (channel === REDIS_CHANNEL.BROADCAST) {
       this.sseManager.emitToAll(ssePayload);

@@ -45,7 +45,7 @@ describe('CreateNotificationUseCase', () => {
       findMissed: jest.fn(),
       updateStatus: jest.fn(),
       updateManyStatus: jest.fn(),
-    } as unknown as jest.Mocked<NotificationRepository>;
+    };
 
     publisher = { publish: jest.fn().mockResolvedValue(1) };
 
@@ -82,6 +82,7 @@ describe('CreateNotificationUseCase', () => {
 
       const result = await useCase.execute(dto);
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(notificationRepository.create).toHaveBeenCalledTimes(1);
       expect(publisher.publish).toHaveBeenCalledWith(
         REDIS_CHANNEL.user(USER_ID),

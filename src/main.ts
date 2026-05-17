@@ -26,11 +26,11 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api-docs', app, document);
 
-  const configService = app.get(ConfigService<AppConfig>);
+  const configService = app.get<ConfigService<AppConfig>>(ConfigService);
   const clientUrl =
-    configService.get(ENV_KEY.CLIENT_URL) ?? 'http://localhost:5173';
+    configService.get<string>(ENV_KEY.CLIENT_URL) ?? 'http://localhost:5173';
   app.enableCors({ origin: clientUrl });
-  const port = configService.get(ENV_KEY.PORT) ?? 3000;
+  const port = configService.get<string>(ENV_KEY.PORT) ?? '3000';
   await app.listen(port);
 }
-bootstrap();
+void bootstrap();

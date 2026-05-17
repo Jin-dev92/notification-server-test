@@ -40,7 +40,7 @@ describe('FindAndMarkMissedUseCase', () => {
       findMissed: jest.fn(),
       updateStatus: jest.fn(),
       updateManyStatus: jest.fn(),
-    } as unknown as jest.Mocked<NotificationRepository>;
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -68,6 +68,7 @@ describe('FindAndMarkMissedUseCase', () => {
       const result = await useCase.execute(USER_ID, 4);
 
       expect(result).toHaveLength(2);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(notificationRepository.updateManyStatus).toHaveBeenCalledWith(
         [5, 6],
         NotificationStatus.DELIVERED,
@@ -80,6 +81,7 @@ describe('FindAndMarkMissedUseCase', () => {
       const result = await useCase.execute(USER_ID, 10);
 
       expect(result).toHaveLength(0);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(notificationRepository.updateManyStatus).not.toHaveBeenCalled();
     });
   });

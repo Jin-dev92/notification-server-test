@@ -41,7 +41,7 @@ describe('MarkAsReadUseCase', () => {
       findMissed: jest.fn(),
       updateStatus: jest.fn(),
       updateManyStatus: jest.fn(),
-    } as unknown as jest.Mocked<NotificationRepository>;
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -69,6 +69,7 @@ describe('MarkAsReadUseCase', () => {
 
       expect(result.status).toBe(NotificationStatus.READ);
       expect(result.readAt).not.toBeNull();
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(notificationRepository.update).toHaveBeenCalledTimes(1);
     });
 

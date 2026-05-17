@@ -40,7 +40,7 @@ describe('NotificationEventService', () => {
       findMissed: jest.fn(),
       updateStatus: jest.fn(),
       updateManyStatus: jest.fn(),
-    } as unknown as jest.Mocked<NotificationRepository>;
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [

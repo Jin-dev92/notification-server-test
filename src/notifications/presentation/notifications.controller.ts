@@ -13,15 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
-import {
-  EMPTY,
-  Observable,
-  Subject,
-  concat,
-  from,
-  interval,
-  merge,
-} from 'rxjs';
+import { EMPTY, Observable, concat, from, interval, merge } from 'rxjs';
 import { map, mergeMap } from 'rxjs/operators';
 import { SseManagerService } from '../../sse/sse-manager.service';
 import { SSE_EVENT_TYPE, SSE_PING_INTERVAL_MS } from '../../sse/sse.constants';
@@ -58,7 +50,7 @@ export class NotificationsController {
     await this.notificationEventService.subscribeUserChannel(userId);
 
     req.on('close', () => {
-      this.sseManager.unsubscribe(userId, subject as Subject<MessageEvent>);
+      this.sseManager.unsubscribe(userId, subject);
       void this.notificationEventService.unsubscribeUserChannel(userId);
     });
 

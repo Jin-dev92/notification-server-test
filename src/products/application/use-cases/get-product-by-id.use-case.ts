@@ -1,7 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Product } from '../../domain/entities/product';
 import { ProductRepository } from '../../domain/repositories/product.repository';
-import { CACHE_EVENT, CACHE_KEY } from '../../constants/product-cache.constants';
+import {
+  CACHE_EVENT,
+  CACHE_KEY,
+} from '../../constants/product-cache.constants';
 import { ProductCacheRepository } from '../../infrastructure/cache/product-cache.repository';
 import { CacheMetricsService } from '../services/cache-metrics.service';
 

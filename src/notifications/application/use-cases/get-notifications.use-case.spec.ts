@@ -40,7 +40,7 @@ describe('GetNotificationsUseCase', () => {
       findMissed: jest.fn(),
       updateStatus: jest.fn(),
       updateManyStatus: jest.fn(),
-    } as unknown as jest.Mocked<NotificationRepository>;
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -63,6 +63,7 @@ describe('GetNotificationsUseCase', () => {
 
       const result = await useCase.execute({ userId: USER_ID });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(notificationRepository.findAll).toHaveBeenCalledWith({
         userId: USER_ID,
         status: undefined,
@@ -78,6 +79,7 @@ describe('GetNotificationsUseCase', () => {
         status: NotificationStatus.PENDING,
       });
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(notificationRepository.findAll).toHaveBeenCalledWith({
         userId: USER_ID,
         status: NotificationStatus.PENDING,

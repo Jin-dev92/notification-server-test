@@ -28,4 +28,5 @@ export const CACHE_STRATEGY = {
   writeBehind: 'write-behind',
 } as const;
 
-export type CacheStrategy = (typeof CACHE_STRATEGY)[keyof typeof CACHE_STRATEGY];
+export type CacheStrategy =
+  (typeof CACHE_STRATEGY)[keyof typeof CACHE_STRATEGY];
