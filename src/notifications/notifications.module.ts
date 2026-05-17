@@ -9,7 +9,7 @@ import { GetNotificationsUseCase } from './application/use-cases/get-notificatio
 import { MarkAsReadUseCase } from './application/use-cases/mark-as-read.use-case';
 import { NotificationRepository } from './domain/repositories/notification.repository';
 import { NotificationEntity } from './infrastructure/persistence/notification.entity';
-import { NotificationTypeOrmRepository } from './infrastructure/persistence/notification.typeorm.repository';
+import { NotificationRepositoryImpl } from './infrastructure/persistence/notification.repository.impl';
 import { NotificationsController } from './presentation/notifications.controller';
 
 @Module({
@@ -20,10 +20,10 @@ import { NotificationsController } from './presentation/notifications.controller
   ],
   controllers: [NotificationsController],
   providers: [
-    NotificationTypeOrmRepository,
+    NotificationRepositoryImpl,
     {
       provide: NotificationRepository,
-      useClass: NotificationTypeOrmRepository,
+      useClass: NotificationRepositoryImpl,
     },
     CreateNotificationUseCase,
     GetNotificationsUseCase,

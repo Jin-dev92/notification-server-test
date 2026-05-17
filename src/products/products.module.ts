@@ -13,15 +13,15 @@ import { UpdateProductWriteThroughUseCase } from './application/use-cases/update
 import { ProductRepository } from './domain/repositories/product.repository';
 import { ProductCacheRepository } from './infrastructure/cache/product-cache.repository';
 import { ProductEntity } from './infrastructure/persistence/product.entity';
-import { ProductTypeOrmRepository } from './infrastructure/persistence/product.typeorm.repository';
+import { ProductRepositoryImpl } from './infrastructure/persistence/product.repository.impl';
 import { ProductsController } from './presentation/products.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([ProductEntity]), RedisModule],
   controllers: [ProductsController],
   providers: [
-    ProductTypeOrmRepository,
-    { provide: ProductRepository, useClass: ProductTypeOrmRepository },
+    ProductRepositoryImpl,
+    { provide: ProductRepository, useClass: ProductRepositoryImpl },
     ProductCacheRepository,
     CacheMetricsSseService,
     CacheMetricsService,

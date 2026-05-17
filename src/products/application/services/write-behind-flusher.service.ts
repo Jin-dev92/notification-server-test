@@ -1,13 +1,19 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ProductRepository } from '../../domain/repositories/product.repository';
-import { CACHE_KEY } from '../../constants/product-cache.constants';
+import {
+  CACHE_EVENT,
+  CACHE_KEY,
+  CACHE_STRATEGY,
+} from '../../constants/product-cache.constants';
 import { ProductCacheRepository } from '../../infrastructure/cache/product-cache.repository';
 import { CacheMetricsService } from './cache-metrics.service';
 
 const FLUSH_INTERVAL_MS = 5_000;
 
 @Injectable()
-export class WriteBehindFlusherService implements OnModuleInit, OnModuleDestroy {
+export class WriteBehindFlusherService
+  implements OnModuleInit, OnModuleDestroy
+{
   private intervalId: ReturnType<typeof setInterval> | null = null;
   private isPaused = false;
 
@@ -47,8 +53,11 @@ export class WriteBehindFlusherService implements OnModuleInit, OnModuleDestroy 
     for (const id of ids) {
       try {
         await this.repo.update(+id, JSON.parse(pending[id]));
-        this.metrics.emit('db_write', { id, strategy: 'write-behind' });
-        this.metrics.emit('flush_succeeded', { id });
+        this.metrics.emit(CACHE_EVENT.dbWrite, {
+          id,
+          strategy: CACHE_STRATEGY.writeBehind,
+        });
+        this.metrics.emit(CACHE_EVENT.flushSucceeded, { id });
       } catch {
         // 실패한 id는 wb:pending에 남겨 다음 flush에서 재시도
       }
@@ -56,6 +65,6 @@ export class WriteBehindFlusherService implements OnModuleInit, OnModuleDestroy 
 
     await this.cache.hdel(CACHE_KEY.writeBehindPending, ...ids);
     await this.cache.del(CACHE_KEY.productsList);
-    this.metrics.emit('invalidate', { key: CACHE_KEY.productsList });
+    this.metrics.emit(CACHE_EVENT.invalidate, { key: CACHE_KEY.productsList });
   }
 }

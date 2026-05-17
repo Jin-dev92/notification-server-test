@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Product } from '../../domain/entities/product';
 import { ProductRepository } from '../../domain/repositories/product.repository';
-import { CACHE_KEY, CACHE_TTL } from '../../constants/product-cache.constants';
+import { CACHE_EVENT, CACHE_KEY, CACHE_STRATEGY, CACHE_TTL } from '../../constants/product-cache.constants';
 import { ProductCacheRepository } from '../../infrastructure/cache/product-cache.repository';
 import { CacheMetricsService } from '../services/cache-metrics.service';
 
@@ -18,22 +18,22 @@ export class GetProductsCacheAsideUseCase {
     const cached = await this.cache.get(CACHE_KEY.productsList);
 
     if (cached) {
-      this.metrics.emit('cache_hit', {
-        strategy: 'cache-aside',
+      this.metrics.emit(CACHE_EVENT.cacheHit, {
+        strategy: CACHE_STRATEGY.cacheAside,
         key: CACHE_KEY.productsList,
         latencyMs: Date.now() - start,
       });
       return JSON.parse(cached) as Product[];
     }
 
-    this.metrics.emit('cache_miss', {
-      strategy: 'cache-aside',
+    this.metrics.emit(CACHE_EVENT.cacheMiss, {
+      strategy: CACHE_STRATEGY.cacheAside,
       key: CACHE_KEY.productsList,
     });
 
     const products = await this.repo.findAll();
-    this.metrics.emit('db_read', {
-      strategy: 'cache-aside',
+    this.metrics.emit(CACHE_EVENT.dbRead, {
+      strategy: CACHE_STRATEGY.cacheAside,
       count: products.length,
     });
 
@@ -42,7 +42,7 @@ export class GetProductsCacheAsideUseCase {
       JSON.stringify(products),
       CACHE_TTL.productsList,
     );
-    this.metrics.emit('redis_set', {
+    this.metrics.emit(CACHE_EVENT.redisSet, {
       key: CACHE_KEY.productsList,
       ttl: CACHE_TTL.productsList,
     });

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Product } from '../../domain/entities/product';
 import { ProductRepository } from '../../domain/repositories/product.repository';
-import { CACHE_KEY } from '../../constants/product-cache.constants';
+import { CACHE_EVENT, CACHE_KEY } from '../../constants/product-cache.constants';
 import { ProductCacheRepository } from '../../infrastructure/cache/product-cache.repository';
 import { CacheMetricsService } from '../services/cache-metrics.service';
 
@@ -19,19 +19,19 @@ export class GetProductByIdUseCase {
     const cached = await this.cache.get(key);
 
     if (cached) {
-      this.metrics.emit('cache_hit', {
+      this.metrics.emit(CACHE_EVENT.cacheHit, {
         key,
         latencyMs: Date.now() - start,
       });
       return JSON.parse(cached) as Product;
     }
 
-    this.metrics.emit('cache_miss', { key });
+    this.metrics.emit(CACHE_EVENT.cacheMiss, { key });
 
     const product = await this.repo.findById(id);
     if (!product) throw new NotFoundException(`Product ${id} not found`);
 
-    this.metrics.emit('db_read', { id });
+    this.metrics.emit(CACHE_EVENT.dbRead, { id });
     return product;
   }
 }

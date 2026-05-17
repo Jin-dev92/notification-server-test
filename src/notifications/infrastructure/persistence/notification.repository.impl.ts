@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, MoreThan, Repository } from 'typeorm';
 import { NotificationStatus } from '../../constants/notification.constants';
 import { Notification } from '../../domain/entities/notification';
 import {
@@ -11,7 +11,7 @@ import { NotificationMapper } from './notification.mapper';
 import { NotificationEntity } from './notification.entity';
 
 @Injectable()
-export class NotificationTypeOrmRepository extends NotificationRepository {
+export class NotificationRepositoryImpl extends NotificationRepository {
   constructor(
     @InjectRepository(NotificationEntity)
     private readonly repo: Repository<NotificationEntity>,
@@ -43,18 +43,19 @@ export class NotificationTypeOrmRepository extends NotificationRepository {
     const where: Record<string, unknown> = { userId: query.userId };
     if (query.status) where.status = query.status;
     const orms = await this.repo.find({ where, order: { createdAt: 'DESC' } });
-    return orms.map(NotificationMapper.toDomain);
+    return orms.map((orm) => NotificationMapper.toDomain(orm));
   }
 
   async findMissed(userId: string, afterId: number): Promise<Notification[]> {
-    const orms = await this.repo
-      .createQueryBuilder('n')
-      .where('n.userId = :userId', { userId })
-      .andWhere('n.id > :afterId', { afterId })
-      .andWhere('n.status = :status', { status: NotificationStatus.PENDING })
-      .orderBy('n.id', 'ASC')
-      .getMany();
-    return orms.map(NotificationMapper.toDomain);
+    const orms = await this.repo.find({
+      where: {
+        userId,
+        id: MoreThan(afterId),
+        status: NotificationStatus.PENDING,
+      },
+      order: { id: 'ASC' },
+    });
+    return orms.map((orm) => NotificationMapper.toDomain(orm));
   }
 
   async updateStatus(id: number, status: NotificationStatus): Promise<void> {

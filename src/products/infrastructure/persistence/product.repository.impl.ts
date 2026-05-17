@@ -11,7 +11,7 @@ import { ProductEntity } from './product.entity';
 import { ProductMapper } from './product.mapper';
 
 @Injectable()
-export class ProductTypeOrmRepository extends ProductRepository {
+export class ProductRepositoryImpl extends ProductRepository {
   constructor(
     @InjectRepository(ProductEntity)
     private readonly repo: Repository<ProductEntity>,
@@ -21,7 +21,7 @@ export class ProductTypeOrmRepository extends ProductRepository {
 
   async findAll(): Promise<Product[]> {
     const orms = await this.repo.find({ order: { id: 'ASC' } });
-    return orms.map(ProductMapper.toDomain);
+    return orms.map((orm) => ProductMapper.toDomain(orm));
   }
 
   async findById(id: number): Promise<Product | null> {
@@ -39,6 +39,6 @@ export class ProductTypeOrmRepository extends ProductRepository {
   async createMany(products: CreateProductData[]): Promise<Product[]> {
     const orms = this.repo.create(products);
     const saved = await this.repo.save(orms);
-    return saved.map(ProductMapper.toDomain);
+    return saved.map((orm) => ProductMapper.toDomain(orm));
   }
 }
