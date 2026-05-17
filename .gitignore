@@ -62,3 +62,5 @@ client/node_modules
 .claude
 .omc
 .gstack
+.agents
+skills-lock.json
