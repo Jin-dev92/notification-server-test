@@ -14,6 +14,8 @@ export interface UpdateProductData {
 export abstract class ProductRepository {
   abstract findAll(): Promise<Product[]>;
   abstract findById(id: number): Promise<Product | null>;
-  abstract update(id: number, data: UpdateProductData): Promise<Product>;
+  abstract create(data: CreateProductData): Promise<Product>;
   abstract createMany(products: CreateProductData[]): Promise<Product[]>;
+  abstract update(id: number, data: UpdateProductData): Promise<Product>;
+  abstract delete(id: number): Promise<void>;
 }

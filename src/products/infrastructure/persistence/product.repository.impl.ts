@@ -36,9 +36,21 @@ export class ProductRepositoryImpl extends ProductRepository {
     return ProductMapper.toDomain(orm);
   }
 
+  async create(data: CreateProductData): Promise<Product> {
+    const orm = this.repo.create(data);
+    const saved = await this.repo.save(orm);
+    return ProductMapper.toDomain(saved);
+  }
+
   async createMany(products: CreateProductData[]): Promise<Product[]> {
     const orms = this.repo.create(products);
     const saved = await this.repo.save(orms);
     return saved.map((orm) => ProductMapper.toDomain(orm));
+  }
+
+  async delete(id: number): Promise<void> {
+    const result = await this.repo.delete(id);
+    if (result.affected === 0)
+      throw new NotFoundException(`Product ${id} not found`);
   }
 }

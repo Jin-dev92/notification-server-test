@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { RedisModule } from '../redis/redis.module';
 import { CacheMetricsSseService } from './application/services/cache-metrics-sse.service';
 import { CacheMetricsService } from './application/services/cache-metrics.service';
+import { ProductService } from './application/services/product.service';
 import { WriteBehindFlusherService } from './application/services/write-behind-flusher.service';
 import { GetProductByIdUseCase } from './application/use-cases/get-product-by-id.use-case';
 import { GetProductsCacheAsideUseCase } from './application/use-cases/get-products-cache-aside.use-case';
@@ -22,6 +23,7 @@ import { ProductsController } from './presentation/products.controller';
   providers: [
     ProductRepositoryImpl,
     { provide: ProductRepository, useClass: ProductRepositoryImpl },
+    ProductService,
     ProductCacheRepository,
     CacheMetricsSseService,
     CacheMetricsService,
