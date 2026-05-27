@@ -24,15 +24,14 @@ export class SetnxLockService extends LockService {
 
   async acquire(key: string, ttlMs: number): Promise<LockHandle | null> {
     const token = randomUUID();
-    let elapsed = 0;
+    const deadline = Date.now() + this.maxWaitMs;
     let delay = this.initialDelayMs;
 
-    while (elapsed < this.maxWaitMs) {
+    while (Date.now() < deadline) {
       const result = await this.redis.set(key, token, 'PX', ttlMs, 'NX');
       if (result === 'OK') return { key, token };
 
       await sleep(delay);
-      elapsed += delay;
       delay = Math.min(delay * 2, 500);
     }
 

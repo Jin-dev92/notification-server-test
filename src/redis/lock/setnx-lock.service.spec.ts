@@ -35,7 +35,7 @@ describe('SetnxLockService', () => {
     redis.set.mockResolvedValue(null);
     const handle = await service.acquire('test:key', 5000);
     expect(handle).toBeNull();
-  }, 10000);
+  }, 1000);
 
   it('재시도 후 락 획득 성공 시 handle을 반환한다', async () => {
     redis.set
@@ -56,5 +56,12 @@ describe('SetnxLockService', () => {
       'test:key',
       'my-uuid',
     );
+  });
+
+  it('락이 만료됐거나 다른 소유자 토큰으로 release 시 예외 없이 완료된다', async () => {
+    redis.eval.mockResolvedValue(0);
+    await expect(
+      service.release({ key: 'test:key', token: 'expired-token' }),
+    ).resolves.toBeUndefined();
   });
 });
