@@ -15,10 +15,10 @@ export class CouponsController {
     private readonly getIssuedCount: GetIssuedCountUseCase,
   ) {}
 
-  @ApiOperation({ summary: '테스트용 쿠폰 생성 (stock: 100)' })
+  @ApiOperation({ summary: '테스트용 쿠폰 생성 (기본 stock: 100)' })
   @Post('seed')
-  seed(): Promise<Coupon> {
-    return this.seedCoupons.execute();
+  seed(@Body() body?: { maxCount?: number }): Promise<Coupon> {
+    return this.seedCoupons.execute(undefined, body?.maxCount);
   }
 
   @ApiOperation({ summary: '쿠폰 발급 — 락 획득 실패/재고 소진 시 409' })

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LockService } from '../redis/lock/lock.interface';
-import { SetnxLockService } from '../redis/lock/setnx-lock.service';
+import { RedlockLockService } from '../redis/lock/redlock-lock.service';
 import { RedisModule } from '../redis/redis.module';
 import { GetIssuedCountUseCase } from './application/use-cases/get-issued-count.use-case';
 import { IssueCouponUseCase } from './application/use-cases/issue-coupon.use-case';
@@ -28,8 +28,7 @@ import { CouponsController } from './presentation/coupons.controller';
     IssueCouponUseCase,
     SeedCouponsUseCase,
     GetIssuedCountUseCase,
-    // Task 8에서 RedlockLockService로 교체
-    { provide: LockService, useExisting: SetnxLockService },
+    { provide: LockService, useExisting: RedlockLockService },
   ],
 })
 export class CouponsModule {}
