@@ -53,6 +53,7 @@ export class WriteBehindFlusherService
     const ids = Object.keys(pending);
     if (ids.length === 0) return;
 
+    const successIds: string[] = [];
     for (const id of ids) {
       try {
         await this.repo.update(
@@ -64,12 +65,17 @@ export class WriteBehindFlusherService
           strategy: CACHE_STRATEGY.writeBehind,
         });
         this.metrics.emit(CACHE_EVENT.flushSucceeded, { id });
+        successIds.push(id);
       } catch {
         // 실패한 id는 wb:pending에 남겨 다음 flush에서 재시도
       }
     }
 
-    await this.cache.hdel(CACHE_KEY.writeBehindPending, ...ids);
+    if (successIds.length === 0) return;
+
+    await this.cache.hdel(CACHE_KEY.writeBehindPending, ...successIds);
+    const productKeys = successIds.map((id) => CACHE_KEY.product(+id));
+    await this.cache.del(...productKeys);
     await this.cache.del(CACHE_KEY.productsList);
     this.metrics.emit(CACHE_EVENT.invalidate, { key: CACHE_KEY.productsList });
   }

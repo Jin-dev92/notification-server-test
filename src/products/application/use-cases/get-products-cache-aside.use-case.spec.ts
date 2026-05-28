@@ -52,12 +52,13 @@ describe('GetProductsCacheAsideUseCase', () => {
   describe('cache hit', () => {
     it('캐시에 데이터가 있으면 DB를 조회하지 않고 반환한다', async () => {
       const products = [createMockProduct(1), createMockProduct(2)];
-      const serialized = JSON.stringify(products);
-      cache.get.mockResolvedValue(serialized);
+      cache.get.mockResolvedValue(JSON.stringify(products));
 
       const result = await useCase.execute();
 
-      expect(result).toEqual(JSON.parse(serialized));
+      expect(result).toEqual(products);
+      expect(result[0].createdAt).toBeInstanceOf(Date);
+      expect(result[0].updatedAt).toBeInstanceOf(Date);
       expect(repo.findAll).not.toHaveBeenCalled();
       expect(metrics.emit).toHaveBeenCalledWith(
         CACHE_EVENT.cacheHit,
@@ -66,6 +67,18 @@ describe('GetProductsCacheAsideUseCase', () => {
           key: CACHE_KEY.productsList,
         }),
       );
+    });
+
+    it('캐시 값이 잘못된 JSON이면 DB에서 재조회한다', async () => {
+      const products = [createMockProduct(1)];
+      cache.get.mockResolvedValue('invalid-json{{{');
+      cache.set.mockResolvedValue(undefined);
+      repo.findAll.mockResolvedValue(products);
+
+      const result = await useCase.execute();
+
+      expect(result).toEqual(products);
+      expect(repo.findAll).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -85,6 +98,17 @@ describe('GetProductsCacheAsideUseCase', () => {
         JSON.stringify(products),
         CACHE_TTL.productsList,
       );
+    });
+
+    it('Redis 쓰기가 실패해도 DB 조회 결과를 반환한다', async () => {
+      const products = [createMockProduct(1)];
+      cache.get.mockResolvedValue(null);
+      cache.set.mockRejectedValue(new Error('ECONNREFUSED'));
+      repo.findAll.mockResolvedValue(products);
+
+      const result = await useCase.execute();
+
+      expect(result).toEqual(products);
     });
 
     it('DB 조회 후 cacheMiss → dbRead → redisSet 순서로 메트릭을 emit한다', async () => {

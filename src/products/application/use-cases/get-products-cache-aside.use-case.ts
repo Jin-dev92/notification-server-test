@@ -23,12 +23,21 @@ export class GetProductsCacheAsideUseCase {
     const cached = await this.cache.get(CACHE_KEY.productsList);
 
     if (cached) {
-      this.metrics.emit(CACHE_EVENT.cacheHit, {
-        strategy: CACHE_STRATEGY.cacheAside,
-        key: CACHE_KEY.productsList,
-        latencyMs: Date.now() - start,
-      });
-      return JSON.parse(cached) as Product[];
+      try {
+        const products = JSON.parse(cached) as Product[];
+        products.forEach((p) => {
+          p.createdAt = new Date(p.createdAt);
+          p.updatedAt = new Date(p.updatedAt);
+        });
+        this.metrics.emit(CACHE_EVENT.cacheHit, {
+          strategy: CACHE_STRATEGY.cacheAside,
+          key: CACHE_KEY.productsList,
+          latencyMs: Date.now() - start,
+        });
+        return products;
+      } catch {
+        // 캐시 파싱 실패 시 DB에서 재조회
+      }
     }
 
     this.metrics.emit(CACHE_EVENT.cacheMiss, {
@@ -42,15 +51,19 @@ export class GetProductsCacheAsideUseCase {
       count: products.length,
     });
 
-    await this.cache.set(
-      CACHE_KEY.productsList,
-      JSON.stringify(products),
-      CACHE_TTL.productsList,
-    );
-    this.metrics.emit(CACHE_EVENT.redisSet, {
-      key: CACHE_KEY.productsList,
-      ttl: CACHE_TTL.productsList,
-    });
+    try {
+      await this.cache.set(
+        CACHE_KEY.productsList,
+        JSON.stringify(products),
+        CACHE_TTL.productsList,
+      );
+      this.metrics.emit(CACHE_EVENT.redisSet, {
+        key: CACHE_KEY.productsList,
+        ttl: CACHE_TTL.productsList,
+      });
+    } catch {
+      // Redis 쓰기 실패 시 DB 결과를 그대로 반환
+    }
 
     return products;
   }

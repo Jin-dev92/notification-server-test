@@ -5,6 +5,8 @@ import { ProductRepository } from '../../domain/repositories/product.repository'
 import {
   CACHE_EVENT,
   CACHE_KEY,
+  CACHE_STRATEGY,
+  CACHE_TTL,
 } from '../../constants/product-cache.constants';
 import { ProductCacheRepository } from '../../infrastructure/cache/product-cache.repository';
 import { CacheMetricsService } from '../services/cache-metrics.service';
@@ -26,12 +28,12 @@ function createMockProduct(): Product {
 describe('GetProductByIdUseCase', () => {
   let useCase: GetProductByIdUseCase;
   let repo: { findById: jest.Mock };
-  let cache: { get: jest.Mock };
+  let cache: { get: jest.Mock; set: jest.Mock };
   let metrics: { emit: jest.Mock };
 
   beforeEach(async () => {
     repo = { findById: jest.fn() };
-    cache = { get: jest.fn() };
+    cache = { get: jest.fn(), set: jest.fn() };
     metrics = { emit: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -53,37 +55,57 @@ describe('GetProductByIdUseCase', () => {
   describe('cache hit', () => {
     it('캐시에 상품이 있으면 DB를 조회하지 않고 캐시 데이터를 반환한다', async () => {
       const product = createMockProduct();
-      const serialized = JSON.stringify(product);
-      cache.get.mockResolvedValue(serialized);
+      cache.get.mockResolvedValue(JSON.stringify(product));
 
       const result = await useCase.execute(PRODUCT_ID);
 
-      expect(result).toEqual(JSON.parse(serialized));
+      expect(result).toEqual(product);
+      expect(result.createdAt).toBeInstanceOf(Date);
+      expect(result.updatedAt).toBeInstanceOf(Date);
       expect(repo.findById).not.toHaveBeenCalled();
       expect(metrics.emit).toHaveBeenCalledWith(
         CACHE_EVENT.cacheHit,
-        expect.objectContaining({ key: CACHE_KEY.product(PRODUCT_ID) }),
+        expect.objectContaining({
+          strategy: CACHE_STRATEGY.cacheAside,
+          key: CACHE_KEY.product(PRODUCT_ID),
+        }),
       );
     });
   });
 
   describe('cache miss', () => {
-    it('캐시에 없고 DB에 상품이 있으면 DB 조회 후 반환한다', async () => {
+    it('캐시에 없고 DB에 상품이 있으면 DB 조회 후 캐시에 저장하고 반환한다', async () => {
       const product = createMockProduct();
       cache.get.mockResolvedValue(null);
+      cache.set.mockResolvedValue(undefined);
       repo.findById.mockResolvedValue(product);
 
       const result = await useCase.execute(PRODUCT_ID);
 
       expect(result).toEqual(product);
       expect(repo.findById).toHaveBeenCalledWith(PRODUCT_ID);
+      expect(cache.set).toHaveBeenCalledWith(
+        CACHE_KEY.product(PRODUCT_ID),
+        JSON.stringify(product),
+        CACHE_TTL.product,
+      );
       expect(metrics.emit).toHaveBeenCalledWith(
         CACHE_EVENT.cacheMiss,
-        expect.objectContaining({ key: CACHE_KEY.product(PRODUCT_ID) }),
+        expect.objectContaining({
+          strategy: CACHE_STRATEGY.cacheAside,
+          key: CACHE_KEY.product(PRODUCT_ID),
+        }),
       );
       expect(metrics.emit).toHaveBeenCalledWith(
         CACHE_EVENT.dbRead,
-        expect.objectContaining({ id: PRODUCT_ID }),
+        expect.objectContaining({
+          strategy: CACHE_STRATEGY.cacheAside,
+          id: PRODUCT_ID,
+        }),
+      );
+      expect(metrics.emit).toHaveBeenCalledWith(
+        CACHE_EVENT.redisSet,
+        expect.objectContaining({ key: CACHE_KEY.product(PRODUCT_ID) }),
       );
     });
 
@@ -92,6 +114,29 @@ describe('GetProductByIdUseCase', () => {
       repo.findById.mockResolvedValue(null);
 
       await expect(useCase.execute(999)).rejects.toThrow(NotFoundException);
+    });
+
+    it('Redis 쓰기가 실패해도 DB 조회 결과를 반환한다', async () => {
+      const product = createMockProduct();
+      cache.get.mockResolvedValue(null);
+      cache.set.mockRejectedValue(new Error('ECONNREFUSED'));
+      repo.findById.mockResolvedValue(product);
+
+      const result = await useCase.execute(PRODUCT_ID);
+
+      expect(result).toEqual(product);
+    });
+
+    it('캐시 값이 잘못된 JSON이면 DB에서 재조회한다', async () => {
+      const product = createMockProduct();
+      cache.get.mockResolvedValue('invalid-json{{{');
+      cache.set.mockResolvedValue(undefined);
+      repo.findById.mockResolvedValue(product);
+
+      const result = await useCase.execute(PRODUCT_ID);
+
+      expect(result).toEqual(product);
+      expect(repo.findById).toHaveBeenCalledWith(PRODUCT_ID);
     });
   });
 });

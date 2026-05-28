@@ -20,19 +20,19 @@
 
 > 이커머스 상품 목록 캐싱 시나리오
 
-- [ ] **Cache-Aside 구현**
+- [x] **Cache-Aside 구현**
   - DB에서 읽고 Redis에 저장, 다음 요청부터 캐시 히트
   - TTL 만료 시 DB 재조회 흐름 구현
 
-- [ ] **Write-Through 구현**
+- [x] **Write-Through 구현**
   - 데이터 변경 시 DB와 Redis 동시 업데이트
   - Cache-Aside와 비교해서 어떤 상황에 유리한지 정리
 
-- [ ] **Write-Behind 구현**
+- [x] **Write-Behind 구현**
   - Redis에 먼저 쓰고, 일정 시간 후 DB에 반영
   - 데이터 유실 리스크와 트레이드오프 정리
 
-- [ ] **캐시 무효화(Invalidation) 처리**
+- [x] **캐시 무효화(Invalidation) 처리**
   - 원본 데이터 변경 시 캐시 삭제 or 갱신 전략 구현
   - stale 데이터 내려가는 케이스 재현
 
